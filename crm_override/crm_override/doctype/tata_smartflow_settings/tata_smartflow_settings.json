@@ -1,0 +1,78 @@
+{
+  "actions": [],
+  "allow_rename": 1,
+  "creation": "2025-04-02 11:23:22.562090",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "field_order": [
+    "settings_section",
+    "sync_mode",
+    "authentication_token",
+    "call_log_api_url",
+    "click_to_call_api_url",
+    "token_for_upload_file",
+    "enable_click_to_call"
+  ],
+  "fields": [
+    {
+      "fieldname": "settings_section",
+      "fieldtype": "Section Break",
+      "label": "Settings"
+    },
+    {
+      "fieldname": "sync_mode",
+      "fieldtype": "Select",
+      "label": "Sync Mode",
+      "options": "full\nincremental\nnone"
+    },
+    {
+      "fieldname": "authentication_token",
+      "fieldtype": "Data",
+      "label": "Authentication Token"
+    },
+    {
+      "fieldname": "call_log_api_url",
+      "fieldtype": "Data",
+      "label": "Call Log API URL"
+    },
+    {
+      "fieldname": "click_to_call_api_url",
+      "fieldtype": "Data",
+      "label": "Click To Call API URL"
+    },
+    {
+      "default": "0",
+      "fieldname": "enable_click_to_call",
+      "fieldtype": "Check",
+      "label": "Enable Click To Call"
+    },
+    {
+      "fieldname": "token_for_upload_file",
+      "fieldtype": "Data",
+      "label": "Token For Upload File"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "issingle": 1,
+  "links": [],
+  "modified": "2025-04-07 11:26:11.924426",
+  "modified_by": "Administrator",
+  "module": "CRM Override",
+  "name": "Tata Smartflow Settings",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "print": 1,
+      "read": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": []
+}

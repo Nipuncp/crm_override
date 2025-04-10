@@ -3,7 +3,10 @@
     :columns="columns"
     :rows="rows"
     :options="{
-      onRowClick: (row) => emit('showCallLog', row.name),
+      onRowClick: (row) => {
+        console.log(row) // This will print the entire row data
+        emit('showCallLog', row.custom_tata_smart_flow_call_log_id)
+      },
       selectable: options.selectable,
       showTooltip: options.showTooltip,
       resizeColumn: options.resizeColumn,
@@ -129,6 +132,61 @@
         </template>
       </ListRowItem>
     </ListRows>
+    <div class="flex justify-between mt-4 border-t p-3 items-center">
+      <!-- Previous Page Button -->
+      <button
+        @click="props.viewControls?.prevPage()"
+        :disabled="
+          props.viewControls?.isLoading || props.viewControls?.currentPage === 1
+        "
+        class="bg-gray-500 text-white px-4 py-2 rounded disabled:opacity-50"
+      >
+        Previous
+      </button>
+
+      <!-- Page Info -->
+      <span class="text-gray-700">
+        Page {{ props.viewControls?.currentPage }} of
+        {{ props.viewControls?.totalPages }}
+      </span>
+
+      <!-- Total Records -->
+      <span class="text-gray-700"
+        >Total Records: {{ props.viewControls?.totalRecords }}</span
+      >
+
+      <!-- Limit Dropdown -->
+      <div class="flex items-center gap-2">
+        <span class="text-gray-700">Show</span>
+
+        <select
+          v-model="props.viewControls.pageSize"
+          @change="props.viewControls?.updatePageSize()"
+          :disabled="props.viewControls?.isLoading"
+          class="border rounded px-6 py-1 cursor-pointer appearance-none bg-white"
+        >
+          <option v-for="size in [20, 50, 100]" :key="size" :value="size">
+            {{ size }}
+          </option>
+        </select>
+
+        <span class="text-gray-700">per page</span>
+      </div>
+
+      <!-- Next Page Button -->
+      <button
+        @click="props.viewControls?.nextPage()"
+        :disabled="
+          props.viewControls?.isLoading ||
+          props.viewControls?.currentPage * props.viewControls?.pageSize >=
+            props.viewControls?.totalRecords
+        "
+        class="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
+      >
+        Next
+      </button>
+    </div>
+
     <ListSelectBanner>
       <template #actions="{ selections, unselectAll }">
         <Dropdown
@@ -139,15 +197,6 @@
       </template>
     </ListSelectBanner>
   </ListView>
-  <ListFooter
-    class="border-t sm:px-5 px-3 py-2"
-    v-model="pageLengthCount"
-    :options="{
-      rowCount: options.rowCount,
-      totalCount: options.totalCount,
-    }"
-    @loadMore="emit('loadMore')"
-  />
   <ListBulkActions
     ref="listBulkActionsRef"
     v-model="list"
@@ -175,8 +224,8 @@ import {
 } from 'frappe-ui'
 import { sessionStore } from '@/stores/session'
 import { ref, computed, watch } from 'vue'
-
 const props = defineProps({
+  viewControls: Object,
   rows: {
     type: Array,
     required: true,

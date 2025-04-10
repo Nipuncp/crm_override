@@ -129,9 +129,9 @@ app_license = "mit"
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+    "CRM Call Log": "crm_override.api.crm_call_log.CRMCallLog",
+}
 
 # Document Events
 # ---------------
@@ -148,23 +148,16 @@ app_license = "mit"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"crm_override.tasks.all"
-# 	],
-# 	"daily": [
-# 		"crm_override.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"crm_override.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"crm_override.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"crm_override.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+    "cron": {
+        "*/5 * * * *": [
+            "crm_override.api.crm_call_log.enqueue_fetch_tata_smartflow_logs"
+        ],
+        "0 0 * * *": [
+            "crm_override.api.crm_call_log.enqueue_upload_call_logs_recondings"
+        ],
+    }
+}
 
 # Testing
 # -------
@@ -242,3 +235,8 @@ app_license = "mit"
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+fixtures = [
+    {
+        "doctype": "CRM Form Script",
+    }
+]
