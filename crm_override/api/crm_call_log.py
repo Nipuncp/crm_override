@@ -478,7 +478,7 @@ def upload_recordings_for_answered_calls():
             # Download recording only if conditions are met
             response = requests.get(recording_url)
             if response.status_code != 200:
-                frappe.logger().error(
+                frappe.log_error(
                     f"Failed to download recording for {docname} from {recording_url}"
                 )
                 frappe.db.set_value(
@@ -523,20 +523,21 @@ def upload_recordings_for_answered_calls():
                 )
                 frappe.logger().info(f"Successfully uploaded recording for {docname}")
             else:
+                print(f"==>> upload_response: {upload_response}")
+                print(f"==>> upload_response.text: {upload_response.text}")
                 frappe.db.set_value(
                     "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
                 )
-                frappe.logger().error(
-                    f"Upload failed for {docname}: {upload_response.text}"
-                )
+                frappe.log_error(f"Upload failed for {docname}: {upload_response.text}")
             frappe.db.commit()
 
     except Exception as e:
+        print(f"==>>upload_recordings_for_answered_calls: try catch e: {e}")
+        frappe.log_error(f"Error processing {docname}: {str(e)}")
         frappe.db.set_value(
             "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
         )
         frappe.db.commit()
-        frappe.logger().exception(f"Error processing {docname}: {str(e)}")
     finally:
         # Release the lock manually
         frappe.cache().delete_value(LOCK_KEY)
