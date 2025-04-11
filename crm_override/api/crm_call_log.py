@@ -10,6 +10,7 @@ from frappe.utils import get_url
 from crm.integrations.api import get_contact_by_phone_number
 from crm.utils import seconds_to_duration
 from frappe.utils.background_jobs import enqueue
+from frappe.utils.file_manager import save_file
 
 # Pagination limit range for tatasmartflow
 TIME_CHUNK_SECONDS = 2764799  # Equivalent to ~32 days
@@ -463,11 +464,6 @@ def upload_recordings_for_answered_calls():
         },
         fields=["name", "custom_external_recording_url"],
     )
-    # Fetch settings from the single doctype 'Tata Smartflow Settings'
-    settings = frappe.get_single("Tata Smartflow Settings")
-    token_for_upload_file = settings.token_for_upload_file
-
-    site_url = get_url()
 
     try:
         for log in call_logs:
@@ -493,61 +489,44 @@ def upload_recordings_for_answered_calls():
                 )
                 continue
 
-            # Extract filename from URL
+            # Extract filename from URL or define it explicitly
             filename = f"{docname}_recording.mp3"
 
-            # Prepare the file upload
-            files = {
-                "file": (filename, response.content),
-            }
-            data = {
-                "is_private": 1,
-                "folder": "Home",
-                "doctype": "CRM Call Log",
-                "docname": docname,
-                "fieldname": "custom_audio_file",
-                "file_name": filename,
-            }
+            try:
+                # Save the file directly using Frappe's file manager
+                file_doc = save_file(
+                    fname=filename,
+                    content=response.content,
+                    dt="CRM Call Log",
+                    dn=docname,
+                    is_private=1,
+                )
 
-            # Build dynamic upload URL
-            upload_url = f"{site_url}/api/method/upload_file"
-
-            headers = {"Authorization": token_for_upload_file}
-
-            # Use current session cookies for authentication
-            upload_response = requests.post(
-                upload_url, files=files, data=data, headers=headers
-            )
-
-            if upload_response.status_code == 200:
-                file_url = upload_response.json()["message"]["file_url"]
+                # Update the CRM Call Log record with the file URL and status
                 frappe.db.set_value(
                     "CRM Call Log",
                     docname,
                     {
-                        "custom_audio_file": file_url,
+                        "custom_audio_file": file_doc.file_url,
                         "custom_audio_upload_status": "Uploaded",
                     },
                 )
                 frappe.logger().info(f"Successfully uploaded recording for {docname}")
-            else:
-                print(f"==>> upload_response: {upload_response}")
-                print(f"==>> upload_response.text: {upload_response.text}")
+
+            except Exception as e:
                 frappe.db.set_value(
                     "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
                 )
-                frappe.log_error(f"Upload failed for {docname}:", upload_response.text)
-            frappe.db.commit()
+                frappe.log_error(f"Upload failed for {docname}:", str(e))
 
     except Exception as e:
-        print(f"==>>upload_recordings_for_answered_calls: try catch e: {e}")
         frappe.log_error(f"Error processing {docname}:", str(e))
         frappe.db.set_value(
             "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
         )
-        frappe.db.commit()
     finally:
         # Release the lock manually
+        frappe.db.commit()
         frappe.cache().delete_value(LOCK_KEY)
 
 
