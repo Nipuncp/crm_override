@@ -28,15 +28,16 @@
                 <td class="py-2 px-3">
                   <a
                     v-if="
-                      field.name === 'Recording Url' ||
-                      (field.name === 'Audio File' && field.value !== 'N/A')
+                      field.name === 'Custom External Recording Url' ||
+                      (field.name === 'Custom Audio File' &&
+                        field.value !== 'N/A')
                     "
                     :href="field.value"
                     target="_blank"
                     class="text-blue-500 hover:underline"
                   >
                     {{
-                      field.name === 'Audio File'
+                      field.name === 'Custom Audio File'
                         ? 'Open Audio File'
                         : 'Open Recording'
                     }}
@@ -70,7 +71,7 @@ const detailFields = computed(() => {
   return Object.entries(data).map(([key, value]) => ({
     name: formatFieldName(key),
     value: formatValue(value),
-    isLink: key === 'recording_url' && value, // If field is 'recording_url', make it a link
+    isLink: key === 'custom_external_recording_url' && value, // If field is 'custom_external_recording_url', make it a link
   }))
 })
 

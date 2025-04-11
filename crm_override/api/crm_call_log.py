@@ -38,27 +38,27 @@ class CRMCallLog(Document):
                 "type": "Data",
                 "key": "custom_call_received_by",
             },
-            {"label": "Type", "type": "Select", "key": "custom_type"},
+            {"label": "Type", "type": "Select", "key": "custom_crm_call_log_type"},
             {"label": "Agent Name", "type": "Data", "key": "custom_agent_name"},
             {"label": "Service", "type": "Data", "key": "custom_service"},
-            {"label": "Status", "type": "Select", "key": "custom_custom_status"},
+            {"label": "Status", "type": "Select", "key": "custom_call_log_status"},
             {"label": "End Stamp", "type": "Select", "key": "custom_end_stamp"},
             {
                 "label": "Call Duration (s)",
                 "type": "Duration",
-                "key": "custom_call_duration",
+                "key": "custom_call_duration_s",
             },
         ]
         rows = [
             "custom_tata_smart_flow_call_log_id",
             "custom_crm_call_log_caller",
             "custom_call_received_by",
-            "custom_type",
+            "custom_crm_call_log_type",
             "custom_agent_name",
             "custom_service",
-            "custom_custom_status",
+            "custom_call_log_status",
             "custom_end_stamp",
-            "custom_call_duration",
+            "custom_call_duration_s",
         ]
         return {"columns": columns, "rows": rows}
 
@@ -144,6 +144,12 @@ def get_call_log(name):
         "_liked_by",
         "support_api_call",
         "voicemail_recording",
+        "status",
+        "type",
+        "receiver",
+        "caller",
+        "recording_url",
+        "custom_test",
     }
 
     # 🔎 Query the CRM Call Log Doctype for the specific call log
@@ -223,8 +229,7 @@ def sync_tata_smartflow_logs():
 
         if sync_mode == "full":
             # First available logs on Tata-Smartflow start from 2024-04-01 00:00:00
-            # from_date = "2024-04-01 00:00:00"
-            from_date = "2025-04-10 13:00:00"
+            from_date = "2024-04-01 00:00:00"
 
         # Step 2: Get latest `to_date` from API
         response = requests.get(
@@ -237,7 +242,6 @@ def sync_tata_smartflow_logs():
             return
 
         latest_entry = count_data["results"][0]
-        print(f"==>> latest_entry: {latest_entry}")
         to_date = f"{latest_entry.get('date', '')} {latest_entry.get('time', '')}"
         if not to_date.strip():
             frappe.log_error(
@@ -262,7 +266,6 @@ def sync_tata_smartflow_logs():
 
             page = 1
             while True:
-                print("".center(50, "-"))
                 params = {
                     "limit": max_limit,
                     "page": page,
@@ -315,7 +318,7 @@ def sync_tata_smartflow_logs():
                             ),
                             "custom_call_log_status": call.get("status"),
                             "custom_blocked_number_id": call.get("blocked_number_id"),
-                            "custom_call_recording": call.get("recording_url"),
+                            "custom_external_recording_url": call.get("recording_url"),
                             "custom_service": call.get("service"),
                             "custom_date": call.get("date"),
                             "custom_time": call.get("time"),
@@ -397,18 +400,13 @@ def sync_tata_smartflow_logs():
                         }
 
                         doc = frappe.get_doc(call_data)
-                        print("".center(50, "-"))
-                        print(f"==>> doc: {doc}")
                         doc.insert(ignore_permissions=True, ignore_if_duplicate=True)
-                        print(f'==>> doc.insert: {"doc.insert"}')
-                        print("".center(50, "-"))
                         records_inserted += 1
 
                     frappe.db.commit()
 
                 except Exception as error:
                     frappe.log_error(f"Error: {error}", "Tata Smartflow API Sync")
-                    print(f"==>> error: {error}")
                     frappe.db.commit()
 
                 # Move to next page
@@ -454,10 +452,10 @@ def upload_recordings_for_answered_calls():
     call_logs = frappe.get_all(
         "CRM Call Log",
         filters={
-            "audio_upload_status": ["in", ["Not Started", "Failed"]],
-            "answered_seconds": [">", 0],
+            "custom_audio_upload_status": ["in", ["Not Started", "Failed"]],
+            "custom_answered_seconds": [">", 0],
         },
-        fields=["name", "recording_url"],
+        fields=["name", "custom_external_recording_url"],
     )
     # Fetch settings from the single doctype 'Tata Smartflow Settings'
     settings = frappe.get_single("Tata Smartflow Settings")
@@ -468,12 +466,12 @@ def upload_recordings_for_answered_calls():
     try:
         for log in call_logs:
             docname = log.name
-            recording_url = log.recording_url
+            recording_url = log.custom_external_recording_url
 
             if not recording_url:
                 frappe.logger().info(f"No recording URL for {docname}")
                 frappe.db.set_value(
-                    "CRM Call Log", docname, "audio_upload_status", "Not Require"
+                    "CRM Call Log", docname, "custom_audio_upload_status", "Not Require"
                 )
                 continue
 
@@ -484,7 +482,7 @@ def upload_recordings_for_answered_calls():
                     f"Failed to download recording for {docname} from {recording_url}"
                 )
                 frappe.db.set_value(
-                    "CRM Call Log", docname, "audio_upload_status", "Failed"
+                    "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
                 )
                 continue
 
@@ -500,7 +498,7 @@ def upload_recordings_for_answered_calls():
                 "folder": "Home",
                 "doctype": "CRM Call Log",
                 "docname": docname,
-                "fieldname": "audio_file",
+                "fieldname": "custom_audio_file",
             }
 
             # Build dynamic upload URL
@@ -518,12 +516,15 @@ def upload_recordings_for_answered_calls():
                 frappe.db.set_value(
                     "CRM Call Log",
                     docname,
-                    {"audio_file": file_url, "audio_upload_status": "Uploaded"},
+                    {
+                        "custom_audio_file": file_url,
+                        "custom_audio_upload_status": "Uploaded",
+                    },
                 )
                 frappe.logger().info(f"Successfully uploaded recording for {docname}")
             else:
                 frappe.db.set_value(
-                    "CRM Call Log", docname, "audio_upload_status", "Failed"
+                    "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
                 )
                 frappe.logger().error(
                     f"Upload failed for {docname}: {upload_response.text}"
@@ -531,7 +532,9 @@ def upload_recordings_for_answered_calls():
             frappe.db.commit()
 
     except Exception as e:
-        frappe.db.set_value("CRM Call Log", docname, "audio_upload_status", "Failed")
+        frappe.db.set_value(
+            "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
+        )
         frappe.db.commit()
         frappe.logger().exception(f"Error processing {docname}: {str(e)}")
     finally:

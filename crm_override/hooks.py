@@ -166,10 +166,11 @@ scheduler_events = {
 
 # Overriding Methods
 # ------------------------------
-#
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "crm_override.event.get_events"
-# }
+
+override_whitelisted_methods = {
+    "crm.fcrm.doctype.crm_call_log.crm_call_log.get_call_log": "crm_override.api.crm_call_log.get_call_log",
+    "crm.api.doc.get_data": "crm_override.api.doc.get_data",
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,

@@ -4,7 +4,6 @@
     :rows="rows"
     :options="{
       onRowClick: (row) => {
-        console.log(row) // This will print the entire row data
         emit('showCallLog', row.custom_tata_smart_flow_call_log_id)
       },
       selectable: options.selectable,
@@ -75,7 +74,10 @@
               <div>{{ item.timeAgo }}</div>
             </Tooltip>
           </div>
-          <div v-else-if="column.key === 'status'" class="truncate text-base">
+          <div
+            v-else-if="column.key === 'custom_call_log_status'"
+            class="truncate text-base"
+          >
             <Badge
               :variant="'subtle'"
               :theme="item.color"

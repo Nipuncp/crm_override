@@ -7,9 +7,10 @@ const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
 export function getCallLogDetail(row, log, columns = []) {
   let incoming = log.type === 'Incoming'
 
-  if (row === 'duration') {
+  if (row === 'custom_call_duration_s') {
+    console.log('log: ', log)
     return {
-      label: log._duration,
+      label: log.custom_call_duration_s,
       icon: 'clock',
     }
   } else if (row === 'type') {
@@ -17,10 +18,10 @@ export function getCallLogDetail(row, log, columns = []) {
       label: log.type,
       icon: incoming ? 'phone-incoming' : 'phone-outgoing',
     }
-  } else if (row === 'status') {
+  } else if (row === 'custom_call_log_status') {
     return {
-      label: statusLabelMap[log.status],
-      color: statusColorMap[log.status],
+      label: statusLabelMap[log.custom_call_log_status],
+      color: statusColorMap[log.custom_call_log_status],
     }
   } else if (['modified', 'creation'].includes(row)) {
     return {
