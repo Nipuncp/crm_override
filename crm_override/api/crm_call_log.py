@@ -450,7 +450,6 @@ def upload_recordings_for_answered_calls():
         frappe.logger().info(
             "Another instance is running. Skipping upload_recordings_for_answered_calls run."
         )
-        print(" ching issue Not good".center(50, "-"))
         return
 
     # Set the lock
@@ -467,7 +466,6 @@ def upload_recordings_for_answered_calls():
     )
 
     try:
-        print(f"==>> call_logs: {len(call_logs)}")
         for log in call_logs:
             docname = log.name
             recording_url = log.custom_external_recording_url
@@ -483,7 +481,6 @@ def upload_recordings_for_answered_calls():
             response = requests.get(recording_url)
 
             if response.status_code != 200:
-                print(f"==>> response.text: {response.text}")
                 frappe.log_error(
                     f"Failed to download recording for {docname}",
                     f"from {recording_url}, Detail error: {response.text}",
@@ -518,14 +515,12 @@ def upload_recordings_for_answered_calls():
                 frappe.logger().info(f"Successfully uploaded recording for {docname}")
 
             except Exception as e:
-                print(f"==>> e in tenral : {e}")
                 frappe.db.set_value(
                     "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
                 )
                 frappe.log_error(f"Upload failed for {docname}:", str(e))
 
     except Exception as e:
-        print(f"==>> e: {e}")
         frappe.log_error(f"Error processing {docname}:", str(e))
         frappe.db.set_value(
             "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
