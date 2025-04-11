@@ -406,7 +406,10 @@ def sync_tata_smartflow_logs():
                     frappe.db.commit()
 
                 except Exception as error:
-                    frappe.log_error(f"Error: {error}", "Tata Smartflow API Sync")
+                    frappe.log_error(
+                        "Tata Smartflow API Sync, internal try",
+                        f"Error: {error}",
+                    )
                     frappe.db.commit()
 
                 # Move to next page
@@ -429,7 +432,10 @@ def sync_tata_smartflow_logs():
         )
 
     except requests.exceptions.RequestException as e:
-        frappe.log_error(f"API Error: {str(e)}", "Tata Smartflow API Sync")
+        frappe.log_error(
+            "Tata Smartflow API Sync",
+            f"API Error: {str(e)}",
+        )
 
     finally:
         # Release the lock manually
@@ -479,7 +485,8 @@ def upload_recordings_for_answered_calls():
             response = requests.get(recording_url)
             if response.status_code != 200:
                 frappe.log_error(
-                    f"Failed to download recording for {docname} from {recording_url}"
+                    f"Failed to download recording for {docname}",
+                    f"from {recording_url}",
                 )
                 frappe.db.set_value(
                     "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
@@ -499,6 +506,7 @@ def upload_recordings_for_answered_calls():
                 "doctype": "CRM Call Log",
                 "docname": docname,
                 "fieldname": "custom_audio_file",
+                "file_name": filename,
             }
 
             # Build dynamic upload URL
@@ -528,12 +536,12 @@ def upload_recordings_for_answered_calls():
                 frappe.db.set_value(
                     "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
                 )
-                frappe.log_error(f"Upload failed for {docname}: {upload_response.text}")
+                frappe.log_error(f"Upload failed for {docname}:", upload_response.text)
             frappe.db.commit()
 
     except Exception as e:
         print(f"==>>upload_recordings_for_answered_calls: try catch e: {e}")
-        frappe.log_error(f"Error processing {docname}: {str(e)}")
+        frappe.log_error(f"Error processing {docname}:", str(e))
         frappe.db.set_value(
             "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
         )
