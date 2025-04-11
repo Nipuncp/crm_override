@@ -188,7 +188,7 @@ def sync_tata_smartflow_logs():
         return
 
     # Set the lock
-    frappe.cache().set_value(LOCK_KEY, True)
+    frappe.cache().set_value(LOCK_KEY, True, expires_in_sec=4 * 60 * 60)
 
     # Fetch settings from the single doctype 'Tata Smartflow Settings'
     settings = frappe.get_single("Tata Smartflow Settings")
@@ -450,10 +450,11 @@ def upload_recordings_for_answered_calls():
         frappe.logger().info(
             "Another instance is running. Skipping upload_recordings_for_answered_calls run."
         )
+        print(" ching issue Not good".center(50, "-"))
         return
 
     # Set the lock
-    frappe.cache().set_value(LOCK_KEY, True)
+    frappe.cache().set_value(LOCK_KEY, True, expires_in_sec=24 * 60 * 60)
 
     # Fetch only logs where upload is required
     call_logs = frappe.get_all(
@@ -466,6 +467,7 @@ def upload_recordings_for_answered_calls():
     )
 
     try:
+        print(f"==>> call_logs: {len(call_logs)}")
         for log in call_logs:
             docname = log.name
             recording_url = log.custom_external_recording_url
@@ -479,10 +481,12 @@ def upload_recordings_for_answered_calls():
 
             # Download recording only if conditions are met
             response = requests.get(recording_url)
+
             if response.status_code != 200:
+                print(f"==>> response.text: {response.text}")
                 frappe.log_error(
                     f"Failed to download recording for {docname}",
-                    f"from {recording_url}",
+                    f"from {recording_url}, Detail error: {response.text}",
                 )
                 frappe.db.set_value(
                     "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
@@ -514,12 +518,14 @@ def upload_recordings_for_answered_calls():
                 frappe.logger().info(f"Successfully uploaded recording for {docname}")
 
             except Exception as e:
+                print(f"==>> e in tenral : {e}")
                 frappe.db.set_value(
                     "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
                 )
                 frappe.log_error(f"Upload failed for {docname}:", str(e))
 
     except Exception as e:
+        print(f"==>> e: {e}")
         frappe.log_error(f"Error processing {docname}:", str(e))
         frappe.db.set_value(
             "CRM Call Log", docname, "custom_audio_upload_status", "Failed"
@@ -544,7 +550,7 @@ def enqueue_fetch_tata_smartflow_logs():
 
 @frappe.whitelist()
 def enqueue_upload_call_logs_recondings():
-    """Enqueue the sync function to run in the background with 4 hour timeout"""
+    """Enqueue the sync function to run in the background with 1 day timeout"""
     enqueue(
         upload_recordings_for_answered_calls, queue="default", timeout=86400
     )  # 1 day (86400 seconds)

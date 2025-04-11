@@ -9,7 +9,7 @@ export function getCallLogDetail(row, log, columns = []) {
 
   if (row === 'custom_call_duration_s') {
     return {
-      label: log._duration,
+      label: log.custom_call_duration_s,
       icon: 'clock',
     }
   } else if (row === 'type') {
