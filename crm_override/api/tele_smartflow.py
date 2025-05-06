@@ -83,6 +83,7 @@ def tata_smartflow_webhook():
                     "source": "Call",
                 }
             )
+            new_lead.ignore_mandatory = True
             new_lead.insert(ignore_permissions=True)
             lead_name = new_lead.name
 
